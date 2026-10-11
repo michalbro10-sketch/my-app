@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeCraft - ניהול זמן ופיתוח אישי</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Heebo', 'Rubik', 'Segoe UI', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Heebo', 'Rubik', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.8);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.88);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Authentication Screen Modal -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-6">
+            
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                    <i class="fa-solid fa-compass text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white">ברוכים הבאים ל-TimeCraft</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">התחבר או הרשם כדי לגשת לאזור האישי שלך</p>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div id="name-field-container" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">שם מלא:</label>
+                    <input type="text" id="auth-name" placeholder="ישראל ישראלי" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">אימייל:</label>
+                    <input type="email" id="auth-email" required placeholder="yourname@example.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">סיסמה:</label>
+                        <button type="button" onclick="openForgotPasswordModal()" id="forgot-pass-link" class="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">שכחתי סיסמה?</button>
+                    </div>
+                    <input type="password" id="auth-password" required minlength="4" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div id="auth-error-msg" class="text-xs font-medium text-red-500 hidden bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-900"></div>
+                <div id="auth-success-msg" class="text-xs font-medium text-emerald-600 hidden bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-900"></div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/30 transition-all text-sm">
+                    התחבר
+                </button>
+            </form>
+
+            <div class="relative flex items-center justify-center">
+                <div class="border-t border-slate-200 dark:border-slate-700 w-full"></div>
+                <span class="bg-white dark:bg-slate-800 px-3 text-xs text-slate-400 absolute">או</span>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="handleQuickDemoAuth()" type="button" class="w-full flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+                    <i class="fa-solid fa-user-check text-emerald-500"></i>
+                    <span>כניסה מהירה כאורח</span>
+                </button>
+
+                <div class="text-center">
+                    <button onclick="toggleAuthMode()" type="button" id="toggle-auth-mode-btn" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                        אין לך חשבון? הירשם עכשיו
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- App Navigation Header -->
+    <header class="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 glass-panel shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                        <i class="fa-solid fa-compass text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">TimeCraft</span>
+                        <span class="hidden sm:inline-block text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full mr-2 border border-emerald-200 dark:border-emerald-800">איזור אישי</span>
+                    </div>
+                </div>
+
+                <nav class="hidden md:flex space-x-1 space-x-reverse bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                    <button onclick="switchTab('daily')" id="nav-daily" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>משימות יומיות</span>
+                    </button>
+                    <button onclick="switchTab('weekly')" id="nav-weekly" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                        <i class="fa-regular fa-calendar-days"></i>
+                        <span>תכנון שבועי</span>
+                    </button>
+                    <button onclick="switchTab('monthly')" id="nav-monthly" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                        <i class="fa-solid fa-calendar-grid text-sm"></i>
+                        <span>לוח חודשי</span>
+                    </button>
+                    <button onclick="switchTab('growth')" id="nav-growth" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                        <i class="fa-solid fa-bullseye text-emerald-500"></i>
+                        <span>פיתוח והרגלים</span>
+                    </button>
+                </nav>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleDarkMode()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors" title="החלף מצב תאורה">
+                        <i class="fa-solid fa-moon text-lg dark:hidden"></i>
+                        <i class="fa-solid fa-sun text-lg hidden dark:block text-amber-400"></i>
+                    </button>
+
+                    <!-- Profile Dropdown & Logout -->
+                    <div class="relative">
+                        <button onclick="toggleUserDropdown()" class="flex items-center gap-2 p-1.5 pl-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="Avatar" class="w-8 h-8 rounded-lg object-cover ring-2 ring-emerald-500/30">
+                            <span id="user-name-display" class="font-medium text-sm text-slate-700 dark:text-slate-200">משתמש</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 mr-1"></i>
+                        </button>
+
+                        <div id="user-dropdown" class="hidden absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                                <p class="text-xs text-slate-400 font-medium">מחובר כעת כ-</p>
+                                <p id="dropdown-user-email" class="text-xs font-bold text-slate-800 dark:text-white truncate">user@email.com</p>
+                            </div>
+                            <div class="p-1">
+                                <button onclick="handleLogout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                    <span>התנתק מהחשבון</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:hidden flex justify-around bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 py-2 px-1">
+            <button onclick="switchTab('daily')" id="mob-nav-daily" class="mob-nav-btn flex flex-col items-center gap-1 text-xs px-3 py-1 rounded-lg text-slate-500">
+                <i class="fa-solid fa-list-check text-base"></i>
+                <span>יומי</span>
+            </button>
+            <button onclick="switchTab('weekly')" id="mob-nav-weekly" class="mob-nav-btn flex flex-col items-center gap-1 text-xs px-3 py-1 rounded-lg text-slate-500">
+                <i class="fa-regular fa-calendar-days text-base"></i>
+                <span>שבועי</span>
+            </button>
+            <button onclick="switchTab('monthly')" id="mob-nav-monthly" class="mob-nav-btn flex flex-col items-center gap-1 text-xs px-3 py-1 rounded-lg text-slate-500">
+                <i class="fa-solid fa-calendar-grid text-base"></i>
+                <span>חודשי</span>
+            </button>
+            <button onclick="switchTab('growth')" id="mob-nav-growth" class="mob-nav-btn flex flex-col items-center gap-1 text-xs px-3 py-1 rounded-lg text-slate-500">
+                <i class="fa-solid fa-bullseye text-base"></i>
+                <span>הרגלים</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VIEW 1: Daily To-Do List -->
+        <section id="view-daily" class="tab-view space-y-6">
+            <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <div class="flex items-center gap-2 text-emerald-200 text-sm font-medium mb-1">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="current-date-str">יום שישי, 9 באוקטובר 2026</span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold">שלום, <span id="daily-user-greeting">משתמש</span> 👋</h1>
+                        <p class="text-emerald-100 text-sm mt-1 max-w-xl">"הדרך הטובה ביותר לחזות את העתיד היא ליצור אותו." מה נשיג היום?</p>
+                    </div>
+
+                    <div class="bg-white/15 backdrop-blur-md border border-white/20 p-4 rounded-2xl min-w-[240px] w-full md:w-auto">
+                        <div class="flex justify-between items-center text-sm font-medium mb-2">
+                            <span>התקדמות יומית</span>
+                            <span id="daily-progress-text" class="font-bold">0%</span>
+                        </div>
+                        <div class="w-full h-3 bg-black/20 rounded-full overflow-hidden p-0.5">
+                            <div id="daily-progress-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-500 w-0 shadow-sm"></div>
+                        </div>
+                        <p id="daily-progress-sub" class="text-xs text-emerald-100 mt-2 text-center">0 מתוך 0 משימות הושלמו</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-500"></i>
+                    <span>הוספת משימה חדשה</span>
+                </h2>
+                <form id="add-task-form" onsubmit="handleAddTask(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                    <div class="lg:col-span-5">
+                        <input type="text" id="task-title" required placeholder="מה המשימה שלך להיום?" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <select id="task-category" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                            <option value="work">💼 עבודה</option>
+                            <option value="personal">🏠 אישי</option>
+                            <option value="growth">🎯 פיתוח אישי</option>
+                            <option value="health">🏃 בריאות וכושר</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <select id="task-priority" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                            <option value="low">🟢 עדיפות נמוכה</option>
+                            <option value="medium" selected>🟡 עדיפות בינונית</option>
+                            <option value="high">🔴 עדיפות גבוהה</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <input type="number" id="task-time" min="5" max="480" step="5" placeholder="זמן בדקות" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+                    <div class="lg:col-span-1">
+                        <button type="submit" class="w-full h-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-emerald-600/20 transition-colors flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex gap-2 bg-slate-200/60 dark:bg-slate-800 p-1 rounded-xl">
+                    <button onclick="setTaskFilter('status', 'all')" id="filter-status-all" class="task-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300">הכל</button>
+                    <button onclick="setTaskFilter('status', 'active')" id="filter-status-active" class="task-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500">לביצוע</button>
+                    <button onclick="setTaskFilter('status', 'completed')" id="filter-status-completed" class="task-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500">הושלמו</button>
+                </div>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <span class="text-xs text-slate-400 font-medium">קטגוריה:</span>
+                    <button onclick="setTaskFilter('category', 'all')" id="filter-cat-all" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">הכל</button>
+                    <button onclick="setTaskFilter('category', 'work')" id="filter-cat-work" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200">💼 עבודה</button>
+                    <button onclick="setTaskFilter('category', 'personal')" id="filter-cat-personal" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200">🏠 אישי</button>
+                    <button onclick="setTaskFilter('category', 'growth')" id="filter-cat-growth" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200">🎯 פיתוח אישי</button>
+                    <button onclick="setTaskFilter('category', 'health')" id="filter-cat-health" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200">🏃 בריאות</button>
+                </div>
+            </div>
+
+            <div id="daily-tasks-container" class="space-y-3"></div>
+        </section>
+
+        <!-- VIEW 2: Weekly Planner -->
+        <section id="view-weekly" class="tab-view hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-regular fa-calendar-days text-emerald-500"></i>
+                            <span>תכנון שבועי למיקוד ותפוקה</span>
+                        </h1>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">חלק את המטרות השבועיות שלך לימים ספציפיים וצור סדר יום ברור.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-emerald-50/60 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 flex flex-col sm:flex-row items-center gap-3">
+                    <div class="p-3 bg-emerald-500 text-white rounded-xl shadow-sm">
+                        <i class="fa-solid fa-lightbulb text-lg"></i>
+                    </div>
+                    <div class="flex-grow w-full">
+                        <label class="block text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">פוקוס שבועי מרכזי / נושא השבוע:</label>
+                        <input type="text" id="weekly-focus-input" onchange="saveWeeklyFocus(this.value)" placeholder="לדוגמה: סיום המצגת, שמירה על 4 אימוני כושר..." class="w-full bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <div id="weekly-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4"></div>
+        </section>
+
+        <!-- VIEW 3: Monthly Calendar -->
+        <section id="view-monthly" class="tab-view hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 id="monthly-title" class="text-2xl font-bold text-slate-900 dark:text-white">אוקטובר 2026</h1>
+                        <p class="text-sm text-slate-500">מבט על אירועים, יעדים ואבני דרך חודשיות</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="changeMonth(-1)" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        <button onclick="resetMonthToCurrent()" class="px-3 py-1.5 text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-xl">החודש</button>
+                        <button onclick="changeMonth(1)" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-2 mb-2">
+                    <div>ראשון</div>
+                    <div>שני</div>
+                    <div>שלישי</div>
+                    <div>רביעי</div>
+                    <div>חמישי</div>
+                    <div>שישי</div>
+                    <div class="text-amber-500">שבת</div>
+                </div>
+
+                <div id="monthly-calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2"></div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: Growth & Habits -->
+        <section id="view-growth" class="tab-view hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-fire text-amber-500"></i>
+                                    <span>מעקב הרגלים יומי</span>
+                                </h1>
+                                <p class="text-sm text-slate-500">התמדה היא המפתח להצלחה. סמן הרגלים שביצעת היום!</p>
+                            </div>
+                            <button onclick="openAddHabitModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>הוסף הרגל</span>
+                            </button>
+                        </div>
+
+                        <div id="habits-list-container" class="space-y-3"></div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-book-journal-whills text-purple-500"></i>
+                            <span>רפלקציה ותובנת היום</span>
+                        </h2>
+                        <p class="text-sm text-slate-500 mb-4">מה עבד טוב היום? מה למדת או במה השתפרת?</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">תובנה מרכזית להיום:</label>
+                                <textarea id="daily-reflection-text" rows="3" onchange="saveDailyReflection(this.value)" placeholder="תרשום כאן את המחשבות שלך..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            <div class="flex justify-end">
+                                <span id="reflection-saved-status" class="text-xs text-emerald-500 font-medium hidden">✓ נשמר באזור האישי שלך</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
+                        <i class="fa-solid fa-quote-right text-6xl text-white/10 absolute top-2 left-2"></i>
+                        <h3 class="font-extrabold text-lg mb-2">ציטוט השראה יומי</h3>
+                        <p id="quote-text" class="text-sm italic text-purple-100 mb-4">"שינוי קטן בכל יום מוביל לתוצאות ענקיות לאורך זמן."</p>
+                        <span id="quote-author" class="text-xs font-semibold text-purple-300"></span>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-900 dark:text-white text-base border-b border-slate-100 dark:border-slate-700 pb-2">תקציר הישגים</h3>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400">רצף הרגלים פעיל</p>
+                                <p id="stat-max-streak" class="text-xl font-extrabold text-slate-800 dark:text-white">0 ימים</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400">סה״כ משימות שהושלמו</p>
+                                <p id="stat-total-tasks" class="text-xl font-extrabold text-slate-800 dark:text-white">0</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-blue-500 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400">זמן מושקע בפיתוח</p>
+                                <p id="stat-time-invested" class="text-xl font-extrabold text-slate-800 dark:text-white">0 שעות</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="event-modal-title">הוספת אירוע / יעד</h3>
+                <button onclick="closeModal('event-modal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">כותרת האירוע:</label>
+                <input type="text" id="modal-event-title" placeholder="למשל: פגישת צוות, הגשת פרויקט..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">סוג אירוע / תג:</label>
+                <select id="modal-event-type" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="important">⭐ חשוב ביותר</option>
+                    <option value="meeting">👥 פגישה / אירוע</option>
+                    <option value="milestone">🎯 אבן דרך / יעד</option>
+                    <option value="reminder">🔔 תזכורת</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveCalendarEvent()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">שמור אירוע</button>
+                <button onclick="closeModal('event-modal')" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habit Modal -->
+    <div id="habit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white">הוספת הרגל חדש</h3>
+                <button onclick="closeModal('habit-modal')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">שם ההרגל:</label>
+                <input type="text" id="new-habit-title" placeholder="למשל: קריאה בערב, שתיית מים, יוגה..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">אייקון:</label>
+                <select id="new-habit-icon" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="fa-book">📖 ספר / קריאה</option>
+                    <option value="fa-person-running">🏃 ספורט / ריצה</option>
+                    <option value="fa-spa">🧘 מדיטציה / רוגע</option>
+                    <option value="fa-droplet">💧 שתיית מים</option>
+                    <option value="fa-guitar">🎸 נגינה / תחביב</option>
+                    <option value="fa-bed">😴 שינה איכותית</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="handleCreateHabit()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">הוסף הרגל</button>
+                <button onclick="closeModal('habit-modal')" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-emerald-500"></i>
+                    <span>איפוס סיסמה</span>
+                </h3>
+                <button onclick="closeModal('forgot-modal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Step 1: Verify Email -->
+            <div id="forgot-step-1" class="space-y-4">
+                <p class="text-xs text-slate-500 dark:text-slate-400">הזן את כתובת הדוא"ל שאיתה נרשמת למערכת כדי לאפס את הסיסמה שלך.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">דוא"ל למציאת החשבון:</label>
+                    <input type="email" id="forgot-email-input" placeholder="yourname@example.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div id="forgot-error-msg" class="text-xs font-medium text-red-500 hidden bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-900"></div>
+                <button onclick="handleVerifyResetEmail()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">
+                    אמת דוא"ל
+                </button>
+            </div>
+
+            <!-- Step 2: Set New Password -->
+            <div id="forgot-step-2" class="space-y-4 hidden">
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-300">
+                    נמצא חשבון עבור: <span id="reset-user-email-display" class="font-bold"></span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">סיסמה חדשה:</label>
+                    <input type="password" id="forgot-new-password" minlength="4" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div id="forgot-step2-error" class="text-xs font-medium text-red-500 hidden bg-red-50 dark:bg-red-950/40 p-2.5 rounded-xl border border-red-200 dark:border-red-900"></div>
+                <button onclick="handleSaveNewPassword()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">
+                    עדכן סיסמה והתחבר
+                </button>
+            </div>
+
+            <!-- Success Message -->
+            <div id="forgot-success-box" class="hidden p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center space-y-2">
+                <i class="fa-solid fa-circle-check text-2xl text-emerald-500"></i>
+                <p class="text-sm font-bold text-emerald-800 dark:text-emerald-300">הסיסמה שונתה בהצלחה!</p>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400">כעת הנך מחובר לאזור האישי שלך...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        window.state = {
+            currentUser: null,
+            isSignUpMode: false,
+            currentView: 'daily',
+            filters: {
+                status: 'all',
+                category: 'all'
+            },
+            currentMonthDate: new Date(2026, 9, 1),
+            selectedCalendarDate: null,
+            
+            // Core User Data Structure
+            userData: {
+                tasks: [],
+                habits: [],
+                weeklyFocus: '',
+                weeklyPlans: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+                calendarEvents: {},
+                reflections: {}
+            }
+        };
+
+        const quotes = [
+            { quote: "שינוי קטן בכל יום מוביל לתוצאות ענקיות לאורך זמן.", author: "ג'יימס קליר" },
+            { quote: "הזמן שלך מוגבל, אז אל תבזבז אותו בלחיות חיים של מישהו אחר.", author: "סטיב ג'ובס" },
+            { quote: "משמעת היא הגשר בין מטרות להשגים.", author: "ג'ים רון" },
+            { quote: "אתה לא צריך להיות נהדר כדי להתחיל, אבל אתה חייב להתחיל כדי להיות נהדר.", author: "לס בראון" }
+        ];
+
+        // Robust Local Accounts Database Key
+        const USERS_DB_KEY = 'tc_users_db_v2';
+        const SESSION_KEY = 'tc_active_session_v2';
+
+        function getLocalAccounts() {
+            try {
+                const data = localStorage.getItem(USERS_DB_KEY);
+                return data ? JSON.parse(data) : {};
+            } catch(e) {
+                console.error("Failed to read user database:", e);
+                return {};
+            }
+        }
+
+        function saveLocalAccounts(accs) {
+            try {
+                localStorage.setItem(USERS_DB_KEY, JSON.stringify(accs));
+            } catch(e) {
+                console.error("Failed to save user database:", e);
+            }
+        }
+
+        function getActiveSession() {
+            try {
+                const data = localStorage.getItem(SESSION_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        function setActiveSession(user) {
+            try {
+                if(user) {
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+                } else {
+                    localStorage.removeItem(SESSION_KEY);
+                }
+            } catch(e) {}
+        }
+
+        function getUserStorageKey(uid) {
+            return `tc_user_data_${uid}`;
+        }
+
+        function loadUserData(uid) {
+            try {
+                const stored = localStorage.getItem(getUserStorageKey(uid));
+                if (stored) {
+                    window.state.userData = JSON.parse(stored);
+                    return;
+                }
+            } catch(e) {}
+
+            // Default initial state for a new user account
+            window.state.userData = {
+                tasks: [
+                    { id: 't1', title: 'תכנון המשימות לשבוע הקרוב', category: 'work', priority: 'high', time: 20, completed: false },
+                    { id: 't2', title: 'קריאת פרק בספר פיתוח אישי', category: 'growth', priority: 'medium', time: 30, completed: true }
+                ],
+                habits: [
+                    { id: 'h1', title: 'שתיית 2 ליטר מים', icon: 'fa-droplet', streak: 3, completedToday: true },
+                    { id: 'h2', title: 'מדיטציה בבוקר', icon: 'fa-spa', streak: 1, completedToday: false }
+                ],
+                weeklyFocus: 'להתמקד בסיום הפרויקט ולהקפיד על פעילות גופנית',
+                weeklyPlans: { 0: ['תכנון שבועי'], 1: ['אימון כושר'], 2: [], 3: ['פגישת צוות'], 4: [], 5: ['מנוחה וסיכום'], 6: [] },
+                calendarEvents: {},
+                reflections: {}
+            };
+            saveUserData();
+        }
+
+        function saveUserData() {
+            if (!window.state.currentUser) return;
+            try {
+                localStorage.setItem(getUserStorageKey(window.state.currentUser.uid), JSON.stringify(window.state.userData));
+            } catch(e) {}
+        }
+
+        // --- App Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setupQuotes();
+            switchTab('daily');
+
+            // Auto log-in saved session if exists
+            const activeUser = getActiveSession();
+            if (activeUser) {
+                loginUser(activeUser);
+            }
+        });
+
+        function loginUser(user) {
+            window.state.currentUser = user;
+            loadUserData(user.uid);
+            updateUserUI(user);
+            document.getElementById('auth-screen').classList.add('hidden');
+            renderAllViews();
+        }
+
+        function updateUserUI(user) {
+            const displayName = user.displayName || user.email.split('@')[0];
+            document.getElementById('user-name-display').innerText = displayName;
+            document.getElementById('daily-user-greeting').innerText = displayName;
+            document.getElementById('dropdown-user-email').innerText = user.email;
+            document.getElementById('user-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.uid)}`;
+        }
+
+        // --- Auth Handlers ---
+        window.toggleAuthMode = function() {
+            window.state.isSignUpMode = !window.state.isSignUpMode;
+            const nameContainer = document.getElementById('name-field-container');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleBtn = document.getElementById('toggle-auth-mode-btn');
+            const forgotLink = document.getElementById('forgot-pass-link');
+
+            document.getElementById('auth-error-msg').classList.add('hidden');
+            document.getElementById('auth-success-msg').classList.add('hidden');
+
+            if (window.state.isSignUpMode) {
+                nameContainer.classList.remove('hidden');
+                if(forgotLink) forgotLink.classList.add('hidden');
+                submitBtn.innerText = 'צור חשבון חדש';
+                toggleBtn.innerText = 'כבר יש לך חשבון? התחבר כאן';
+            } else {
+                nameContainer.classList.add('hidden');
+                if(forgotLink) forgotLink.classList.remove('hidden');
+                submitBtn.innerText = 'התחבר';
+                toggleBtn.innerText = 'אין לך חשבון? הירשם עכשיו';
+            }
+        };
+
+        // --- Forgot Password Handlers ---
+        let verifiedResetEmail = '';
+
+        window.openForgotPasswordModal = function() {
+            const currentEmail = document.getElementById('auth-email').value.trim();
+            if(currentEmail) {
+                document.getElementById('forgot-email-input').value = currentEmail;
+            }
+            document.getElementById('forgot-step-1').classList.remove('hidden');
+            document.getElementById('forgot-step-2').classList.add('hidden');
+            document.getElementById('forgot-success-box').classList.add('hidden');
+            document.getElementById('forgot-error-msg').classList.add('hidden');
+            document.getElementById('forgot-modal').classList.remove('hidden');
+        };
+
+        window.handleVerifyResetEmail = function() {
+            const email = document.getElementById('forgot-email-input').value.trim().toLowerCase();
+            const errBox = document.getElementById('forgot-error-msg');
+            errBox.classList.add('hidden');
+
+            if (!email) {
+                errBox.innerText = "נא להזין כתובת דוא\"ל";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            const accounts = getLocalAccounts();
+            if (!accounts[email]) {
+                errBox.innerText = "לא נמצא חשבון הרשום עם כתובת דוא\"ל זו.";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            verifiedResetEmail = email;
+            document.getElementById('reset-user-email-display').innerText = email;
+            document.getElementById('forgot-step-1').classList.add('hidden');
+            document.getElementById('forgot-step-2').classList.remove('hidden');
+        };
+
+        window.handleSaveNewPassword = function() {
+            const newPassword = document.getElementById('forgot-new-password').value;
+            const errBox = document.getElementById('forgot-step2-error');
+            errBox.classList.add('hidden');
+
+            if (!newPassword || newPassword.length < 4) {
+                errBox.innerText = "הסיסמה חייבת להכיל לפחות 4 תווים";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            const accounts = getLocalAccounts();
+            if (accounts[verifiedResetEmail]) {
+                accounts[verifiedResetEmail].password = newPassword;
+                saveLocalAccounts(accounts);
+
+                const userObj = {
+                    uid: accounts[verifiedResetEmail].uid,
+                    email: accounts[verifiedResetEmail].email,
+                    displayName: accounts[verifiedResetEmail].displayName
+                };
+
+                setActiveSession(userObj);
+
+                document.getElementById('forgot-step-2').classList.add('hidden');
+                document.getElementById('forgot-success-box').classList.remove('hidden');
+
+                setTimeout(() => {
+                    closeModal('forgot-modal');
+                    loginUser(userObj);
+                }, 1200);
+            }
+        };
+
+        window.handleAuthSubmit = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim().toLowerCase();
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value.trim();
+            const errorMsg = document.getElementById('auth-error-msg');
+            const successMsg = document.getElementById('auth-success-msg');
+
+            errorMsg.classList.add('hidden');
+            successMsg.classList.add('hidden');
+
+            if (!email || !password) {
+                errorMsg.innerText = "נא למלא את כל השדות";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            const accounts = getLocalAccounts();
+
+            if (window.state.isSignUpMode) {
+                // Registration Flow
+                if (accounts[email]) {
+                    errorMsg.innerText = "משתמש זה כבר קיים במערכת. אנא התחבר.";
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+
+                const uid = 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const newUser = {
+                    uid: uid,
+                    email: email,
+                    displayName: name || email.split('@')[0],
+                    password: password
+                };
+
+                accounts[email] = newUser;
+                saveLocalAccounts(accounts);
+                setActiveSession({
+                    uid: newUser.uid,
+                    email: newUser.email,
+                    displayName: newUser.displayName
+                });
+
+                successMsg.innerText = "החשבון נוצר בהצלחה! מעביר אותך לאזור האישי...";
+                successMsg.classList.remove('hidden');
+
+                setTimeout(() => {
+                    loginUser(newUser);
+                }, 500);
+
+            } else {
+                // Login Flow
+                const user = accounts[email];
+                if (!user || user.password !== password) {
+                    errorMsg.innerText = "אימייל או סיסמה שגויים. אנא נסה שנית.";
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+
+                const sessionObj = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName
+                };
+
+                setActiveSession(sessionObj);
+                loginUser(sessionObj);
+            }
+        };
+
+        window.handleQuickDemoAuth = function() {
+            const guestUser = {
+                uid: 'guest_user_demo',
+                email: 'guest@timecraft.app',
+                displayName: 'אורח/ת'
+            };
+            setActiveSession(guestUser);
+            loginUser(guestUser);
+        };
+
+        window.handleLogout = function() {
+            window.state.currentUser = null;
+            setActiveSession(null);
+            document.getElementById('user-dropdown').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        };
+
+        // --- Navigation & View Logic ---
+        window.switchTab = function(viewName) {
+            window.state.currentView = viewName;
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'dark:bg-slate-700', 'text-emerald-600', 'dark:text-emerald-400', 'shadow-sm');
+                btn.classList.add('text-slate-600', 'dark:text-slate-400');
+            });
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-white', 'dark:bg-slate-700', 'text-emerald-600', 'dark:text-emerald-400', 'shadow-sm');
+                activeNav.classList.remove('text-slate-600', 'dark:text-slate-400');
+            }
+
+            document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('text-emerald-600', 'font-bold'));
+            const activeMobNav = document.getElementById(`mob-nav-${viewName}`);
+            if (activeMobNav) activeMobNav.classList.add('text-emerald-600', 'font-bold');
+        };
+
+        window.toggleDarkMode = function() {
+            document.documentElement.classList.toggle('dark');
+        };
+
+        window.toggleUserDropdown = function() {
+            document.getElementById('user-dropdown').classList.toggle('hidden');
+        };
+
+        function renderAllViews() {
+            renderTasks();
+            renderWeeklyPlanner();
+            renderMonthlyCalendar();
+            renderHabits();
+            renderReflection();
+            renderStats();
+        }
+
+        // --- Daily Tasks Logic ---
+        window.handleAddTask = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title').value.trim();
+            const category = document.getElementById('task-category').value;
+            const priority = document.getElementById('task-priority').value;
+            const time = parseInt(document.getElementById('task-time').value) || 30;
+
+            if(!title) return;
+
+            const newTask = {
+                id: 't_' + Date.now(),
+                title,
+                category,
+                priority,
+                time,
+                completed: false
+            };
+
+            window.state.userData.tasks.unshift(newTask);
+            saveUserData();
+            renderTasks();
+            renderStats();
+
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-time').value = '';
+        };
+
+        window.toggleTask = function(id) {
+            const task = window.state.userData.tasks.find(t => t.id === id);
+            if(task) {
+                task.completed = !task.completed;
+                if(task.completed) {
+                    try { confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } }); } catch(e){}
+                }
+                saveUserData();
+                renderTasks();
+                renderStats();
+            }
+        };
+
+        window.deleteTask = function(id) {
+            window.state.userData.tasks = window.state.userData.tasks.filter(t => t.id !== id);
+            saveUserData();
+            renderTasks();
+            renderStats();
+        };
+
+        window.setTaskFilter = function(type, value) {
+            window.state.filters[type] = value;
+            renderTasks();
+        };
+
+        function renderTasks() {
+            const container = document.getElementById('daily-tasks-container');
+            const tasks = window.state.userData.tasks || [];
+
+            let filtered = tasks.filter(task => {
+                if(window.state.filters.status === 'active' && task.completed) return false;
+                if(window.state.filters.status === 'completed' && !task.completed) return false;
+                if(window.state.filters.category !== 'all' && task.category !== window.state.filters.category) return false;
+                return true;
+            });
+
+            const total = tasks.length;
+            const completedCount = tasks.filter(t => t.completed).length;
+            const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+            document.getElementById('daily-progress-bar').style.width = `${percent}%`;
+            document.getElementById('daily-progress-text').innerText = `${percent}%`;
+            document.getElementById('daily-progress-sub').innerText = `${completedCount} מתוך ${total} משימות הושלמו`;
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <i class="fa-regular fa-clipboard text-3xl text-slate-300 dark:text-slate-600 mb-2"></i>
+                        <p class="text-sm text-slate-500">אין משימות להצגה כעת</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const categoryLabels = { work: '💼 עבודה', personal: '🏠 אישי', growth: '🎯 פיתוח', health: '🏃 בריאות' };
+            const priorityBadges = {
+                high: '<span class="text-xs px-2 py-0.5 rounded-md bg-red-100 text-red-600 dark:bg-red-950/60 font-semibold">גבוהה</span>',
+                medium: '<span class="text-xs px-2 py-0.5 rounded-md bg-amber-100 text-amber-600 dark:bg-amber-950/60 font-semibold">בינונית</span>',
+                low: '<span class="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 font-semibold">נמוכה</span>'
+            };
+
+            container.innerHTML = filtered.map(task => `
+                <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border ${task.completed ? 'border-emerald-200 bg-emerald-50/20 dark:border-emerald-900/30' : 'border-slate-200/80 dark:border-slate-700/80'} shadow-sm transition-all hover:shadow-md">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleTask('${task.id}')" class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'}">
+                            ${task.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                        </button>
+                        <div>
+                            <p class="text-sm font-bold ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${task.title}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs text-slate-400 font-medium">${categoryLabels[task.category] || ''}</span>
+                                <span class="text-xs text-slate-300">•</span>
+                                <span class="text-xs text-slate-400"><i class="fa-regular fa-clock text-xs ml-1"></i>${task.time} דק׳</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        ${priorityBadges[task.priority] || ''}
+                        <button onclick="deleteTask('${task.id}')" class="text-slate-300 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors">
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- Weekly Planner ---
+        function renderWeeklyPlanner() {
+            const grid = document.getElementById('weekly-grid');
+            const daysNames = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'שבת'];
+            
+            document.getElementById('weekly-focus-input').value = window.state.userData.weeklyFocus || '';
+
+            grid.innerHTML = daysNames.map((dayName, idx) => {
+                const items = (window.state.userData.weeklyPlans && window.state.userData.weeklyPlans[idx]) || [];
+                return `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between min-h-[180px]">
+                        <div>
+                            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2 mb-2">
+                                <span class="font-bold text-xs ${idx === 6 ? 'text-amber-500' : 'text-slate-700 dark:text-slate-200'}">${dayName}</span>
+                                <button onclick="addWeeklyItem(${idx})" class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950 p-1 rounded-lg text-xs">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="space-y-1.5">
+                                ${items.map((item, itemIdx) => `
+                                    <div class="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl text-xs flex justify-between items-center group border border-slate-100 dark:border-slate-800">
+                                        <span class="text-slate-700 dark:text-slate-300">${item}</span>
+                                        <button onclick="removeWeeklyItem(${idx}, ${itemIdx})" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.saveWeeklyFocus = function(val) {
+            window.state.userData.weeklyFocus = val;
+            saveUserData();
+        };
+
+        window.addWeeklyItem = function(dayIdx) {
+            const text = prompt('הכנס מכלול / משימה מתוכננת ליום זה:');
+            if(text && text.trim()) {
+                if(!window.state.userData.weeklyPlans) window.state.userData.weeklyPlans = {};
+                if(!window.state.userData.weeklyPlans[dayIdx]) window.state.userData.weeklyPlans[dayIdx] = [];
+                window.state.userData.weeklyPlans[dayIdx].push(text.trim());
+                saveUserData();
+                renderWeeklyPlanner();
+            }
+        };
+
+        window.removeWeeklyItem = function(dayIdx, itemIdx) {
+            if(window.state.userData.weeklyPlans && window.state.userData.weeklyPlans[dayIdx]) {
+                window.state.userData.weeklyPlans[dayIdx].splice(itemIdx, 1);
+                saveUserData();
+                renderWeeklyPlanner();
+            }
+        };
+
+        // --- Monthly Calendar ---
+        function renderMonthlyCalendar() {
+            const grid = document.getElementById('monthly-calendar-grid');
+            const year = window.state.currentMonthDate.getFullYear();
+            const month = window.state.currentMonthDate.getMonth();
+
+            const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+            document.getElementById('monthly-title').innerText = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let cellsHTML = '';
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                cellsHTML += `<div class="bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl min-h-[80px] p-2 opacity-40"></div>`;
+            }
+
+            const today = new Date();
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+                const events = (window.state.userData.calendarEvents && window.state.userData.calendarEvents[dateKey]) || [];
+
+                cellsHTML += `
+                    <div onclick="openCalendarEventModal('${dateKey}')" class="bg-slate-50/80 dark:bg-slate-900/60 hover:bg-emerald-50/50 dark:hover:bg-slate-800 rounded-2xl border ${isToday ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-100 dark:border-slate-800'} p-2 min-h-[85px] cursor-pointer flex flex-col justify-between transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold ${isToday ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 w-5 h-5 rounded-full flex items-center justify-center' : 'text-slate-700 dark:text-slate-300'}">${day}</span>
+                        </div>
+                        <div class="space-y-1">
+                            ${events.map(ev => `
+                                <div class="text-[10px] truncate px-1.5 py-0.5 rounded-md font-medium ${ev.type === 'important' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">
+                                    ${ev.title}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = cellsHTML;
+        }
+
+        window.changeMonth = function(dir) {
+            window.state.currentMonthDate.setMonth(window.state.currentMonthDate.getMonth() + dir);
+            renderMonthlyCalendar();
+        };
+
+        window.resetMonthToCurrent = function() {
+            window.state.currentMonthDate = new Date();
+            renderMonthlyCalendar();
+        };
+
+        window.openCalendarEventModal = function(dateKey) {
+            window.state.selectedCalendarDate = dateKey;
+            document.getElementById('event-modal-title').innerText = `הוספת אירוע לתאריך ${dateKey}`;
+            document.getElementById('modal-event-title').value = '';
+            document.getElementById('event-modal').classList.remove('hidden');
+        };
+
+        window.saveCalendarEvent = function() {
+            const title = document.getElementById('modal-event-title').value.trim();
+            const type = document.getElementById('modal-event-type').value;
+            if(!title || !window.state.selectedCalendarDate) return;
+
+            if(!window.state.userData.calendarEvents) window.state.userData.calendarEvents = {};
+            if(!window.state.userData.calendarEvents[window.state.selectedCalendarDate]) {
+                window.state.userData.calendarEvents[window.state.selectedCalendarDate] = [];
+            }
+            window.state.userData.calendarEvents[window.state.selectedCalendarDate].push({ title, type });
+            saveUserData();
+            renderMonthlyCalendar();
+            closeModal('event-modal');
+        };
+
+        // --- Habits & Reflections ---
+        function renderHabits() {
+            const container = document.getElementById('habits-list-container');
+            const habits = window.state.userData.habits || [];
+
+            if(habits.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">אין הרגלים מוגדרים. לחץ על "+ הוסף הרגל" להתחלה.</p>`;
+                return;
+            }
+
+            container.innerHTML = habits.map(habit => `
+                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center text-lg">
+                            <i class="fa-solid ${habit.icon || 'fa-star'}"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-100">${habit.title}</p>
+                            <span class="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-fire"></i> ${habit.streak} ימים ברצף
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="toggleHabitToday('${habit.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${habit.completedToday ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-100'}">
+                        ${habit.completedToday ? '✓ בוצע היום' : 'סמן כבוצע'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.toggleHabitToday = function(habitId) {
+            const habit = window.state.userData.habits.find(h => h.id === habitId);
+            if(habit) {
+                habit.completedToday = !habit.completedToday;
+                if(habit.completedToday) {
+                    habit.streak += 1;
+                    try { confetti({ particleCount: 30, spread: 50 }); } catch(e){}
+                } else {
+                    habit.streak = Math.max(0, habit.streak - 1);
+                }
+                saveUserData();
+                renderHabits();
+                renderStats();
+            }
+        };
+
+        window.openAddHabitModal = function() {
+            document.getElementById('habit-modal').classList.remove('hidden');
+        };
+
+        window.handleCreateHabit = function() {
+            const title = document.getElementById('new-habit-title').value.trim();
+            const icon = document.getElementById('new-habit-icon').value;
+            if(!title) return;
+
+            if(!window.state.userData.habits) window.state.userData.habits = [];
+            window.state.userData.habits.push({
+                id: 'h_' + Date.now(),
+                title,
+                icon,
+                streak: 0,
+                completedToday: false
+            });
+
+            saveUserData();
+            renderHabits();
+            closeModal('habit-modal');
+            document.getElementById('new-habit-title').value = '';
+        };
+
+        function renderReflection() {
+            const todayKey = new Date().toISOString().split('T')[0];
+            const reflections = window.state.userData.reflections || {};
+            document.getElementById('daily-reflection-text').value = reflections[todayKey] || '';
+        }
+
+        window.saveDailyReflection = function(val) {
+            const todayKey = new Date().toISOString().split('T')[0];
+            if(!window.state.userData.reflections) window.state.userData.reflections = {};
+            window.state.userData.reflections[todayKey] = val;
+            saveUserData();
+
+            const status = document.getElementById('reflection-saved-status');
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 2000);
+        };
+
+        function renderStats() {
+            const tasks = window.state.userData.tasks || [];
+            const habits = window.state.userData.habits || [];
+
+            const completedTasks = tasks.filter(t => t.completed).length;
+            const timeSum = tasks.filter(t => t.completed).reduce((acc, curr) => acc + (curr.time || 0), 0);
+            const hours = (timeSum / 60).toFixed(1);
+            
+            const maxStreak = habits.reduce((max, h) => h.streak > max ? h.streak : max, 0);
+
+            document.getElementById('stat-total-tasks').innerText = completedTasks;
+            document.getElementById('stat-time-invested').innerText = `${hours} שעות`;
+            document.getElementById('stat-max-streak').innerText = `${maxStreak} ימים`;
+        }
+
+        function setupQuotes() {
+            const q = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quote-text').innerText = `"${q.quote}"`;
+            document.getElementById('quote-author').innerText = `— ${q.author}`;
+        }
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
